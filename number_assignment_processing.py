@@ -1,6 +1,10 @@
 import pandas as pd
 import openpyxl
 import numpy as np
+import xlrd
+import tkinter
+from tkinter import messagebox
+
 import logging
 import re
 import sys
@@ -10,9 +14,6 @@ from openpyxl.styles import Alignment
 # 文字の太さを扱うにインポートする必要がある
 from openpyxl.styles import Font
 import os
-
-import tkinter
-from tkinter import messagebox
 
 # 例外処理
 # Excelファイルが開いている時(開いていると処理できずプログラム落ちる)
@@ -430,8 +431,8 @@ def serial_number_selection(after_ecxel_path):
             # メインウィンドウを非表示
             root.withdraw()
             # ダイアログの表示
-            messagebox.showwarning('実行エラー', str(
-                select_item_list)+'\nは存在しない項目なのでスキップします。')
+            messagebox.showwarning('警告ダイアログ', str(
+                select_item_list)+(f'\nは存在しない項目なのでスキップします。\nselect_item.xlsx内に入力された項目の確認をお願いします。\nプログラムは抽出項目{select_item_list}の処理のみスキップして続行します。'))
 
     print("削除！" + str(select_value_lists))
 
@@ -534,14 +535,29 @@ count = 0
 path = "./"
 # フォルダ内のファイル一覧取得
 files = os.listdir(path)
-# フォルダ内の拡張子が.xlsxだったらファイル名取得し、function実行
+# フォルダ内の拡張子が.xlsだったら、.xlsxへ変換する
 for file in files:
     # os.path.splitext(ファイル名)で拡張子とそれ以外に分割されたタプルが戻り値をして戻る
     file_extension = os.path.splitext(file)
-    # タプルの[1]＝＞拡張子を指定し、.xlsxだったら関数実行
-    if file_extension[1] == ".xlsx":
-        serial_number_assignment(file)
-        count += 1
+    # 拡張子が.xlsだったらTrue
+    if file_extension[1] == ".xls":
+        # .xlsファイルを読み込む
+        df = pd.read_excel(file, header=0, index_col=0)
+        # .xlsxファイルへ変換
+        df.to_excel(file_extension[0]+'.xlsx')
+
+# フォルダ内のファイル一覧再取得
+files = os.listdir(path)
+# フォルダ内の拡張子が.xlsxだったらファイル名取得し、function実行    
+for file in files:
+    # os.path.splitext(ファイル名)で拡張子とそれ以外に分割されたタプルが戻り値をして戻る
+    file_extension = os.path.splitext(file)    
+    # タプルの[1]＝＞拡張子を指定し、.xlsxだったら関数実行  
+    if file_extension[1] == ".xlsx" :
+            serial_number_assignment(file)
+            # フォルダ内Excelファイル数のカウントアップ
+            count += 1
+
 # フォルダ内のExcelファイルが無かった時の処理
 if count == 0:
     # メインウィンドウの作成
@@ -564,7 +580,7 @@ for after_file in after_files:
     file_extension = os.path.splitext(after_file)
     if file_extension[1] == ".xlsx":
         serial_number_selection(after_file)
-
+        print("OK")
 # 処理終了ダイアログ処理-------------------------------------------------
 
 # メインウィンドウの作成
